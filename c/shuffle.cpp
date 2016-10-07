@@ -1,12 +1,24 @@
-// clang -mavx2 -march=native -std=c99 -O3 -o shuffle shuffle.c -Wall -Wextra
+// clang++ -mavx2 -march=native -std=c++11 -O3 -o shuffle shuffle.cpp -Wall -Wextra
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
+#include <algorithm>
+#include <random>
+
 
 #include "pcg.h"
+// wrapper around pcg to satisfy fancy C++
+struct PCGUniformRandomBitGenerator {
+  typedef uint32_t result_type;
+  static constexpr result_type min() {return 0;}
+  static constexpr result_type max() {return UINT32_MAX;}
+  uint32_t operator()() {
+   return pcg32_random();
+  }
+};
 
 // as per the PCG implementation , uses two 32-bit divisions
 static inline uint32_t pcg32_random_bounded(uint32_t bound)
@@ -81,7 +93,7 @@ static inline uint32_t pcg32_random_bounded_divisionless(uint32_t range) {
 
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
-        register unsigned cyc_high, cyc_low;                                  \
+         unsigned cyc_high, cyc_low;                                  \
         __asm volatile(                                                       \
             "cpuid\n\t"                                                       \
             "rdtsc\n\t"                                                       \
@@ -93,7 +105,7 @@ static inline uint32_t pcg32_random_bounded_divisionless(uint32_t range) {
 
 #define RDTSC_FINAL(cycles)                                                   \
     do {                                                                      \
-        register unsigned cyc_high, cyc_low;                                  \
+         unsigned cyc_high, cyc_low;                                  \
         __asm volatile(                                                       \
             "rdtscp\n\t"                                                      \
             "mov %%edx, %0\n\t"                                               \
@@ -113,14 +125,14 @@ int qsort_compare_uint32_t(const void *a, const void *b) {
     return ( *(uint32_t *)a - *(uint32_t *)b );
 }
 uint32_t *create_sorted_array(size_t length) {
-    uint32_t *array = malloc(length * sizeof(uint32_t));
+    uint32_t *array = (uint32_t *) malloc(length * sizeof(uint32_t));
     for (size_t i = 0; i < length; i++) array[i] = (uint32_t) pcg32_random();
     qsort(array, length, sizeof(*array), qsort_compare_uint32_t);
     return array;
 }
 
 uint32_t *create_random_array(size_t count) {
-    uint32_t *targets = malloc(count * sizeof(uint32_t));
+    uint32_t *targets = (uint32_t *)  malloc(count * sizeof(uint32_t));
     for (size_t i = 0; i < count; i++) targets[i] = (uint32_t) (pcg32_random() & 0x7FFFFFF);
     return targets;
 }
@@ -257,8 +269,17 @@ void demo(int size) {
     printf("Tests assume that array is in cache as much as possible.\n");
     int repeat = 500;
     uint32_t * testvalues = create_random_array(size);
-    uint32_t * pristinecopy = malloc(size * sizeof(uint32_t));
+    uint32_t * pristinecopy = (uint32_t *) malloc(size * sizeof(uint32_t));
     memcpy(pristinecopy,testvalues,sizeof(uint32_t) * size);
+    if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
+
+    PCGUniformRandomBitGenerator pgcgen;
+
+    std::random_device rd;
+    std::mt19937 gmt19937(rd());
+
+
+    BEST_TIME(std::shuffle(testvalues,testvalues+size,pgcgen), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
     BEST_TIME(shuffle_pcg(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
@@ -275,6 +296,7 @@ void demo(int size) {
 
     BEST_TIME(shuffle_pcg_divisionless_with_slight_bias(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
+
 
     free(testvalues);
     free(pristinecopy);
