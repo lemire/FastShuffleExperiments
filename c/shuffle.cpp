@@ -21,9 +21,8 @@ struct PCGUniformRandomBitGenerator {
 };
 
 // as per the PCG implementation , uses two 32-bit divisions
-static inline uint32_t pcg32_random_bounded(uint32_t bound)
-{
-    uint32_t threshold = -bound % bound;
+static inline uint32_t pcg32_random_bounded(uint32_t bound) {
+    uint32_t threshold = (~bound + 1) % bound;// -bound % bound
     for (;;) {
         uint32_t r = pcg32_random();
         if (r >= threshold)
@@ -46,9 +45,10 @@ static inline uint32_t java_random_bounded(uint32_t bound)
 // as per the Go implementation
 static inline uint32_t go_random_bounded(uint32_t bound) {
   uint32_t bits;
-  if((bound & (bound - 1)) == 0) {
-      return pcg32_random() & (bound - 1);
-  }
+  // optimizing for powers of two is harmful
+  //if((bound & (bound - 1)) == 0) {
+  //    return pcg32_random() & (bound - 1);
+  //}
   uint32_t t = 0xFFFFFFFF % bound;
   do {
     bits = pcg32_random();
@@ -263,6 +263,7 @@ void  shuffle_pcg(uint32_t *storage, uint32_t size) {
     }
 }
 
+
 void demo(int size) {
     printf("Shuffling arrays of size %d \n",size);
     printf("Time reported in number of cycles per array element.\n");
@@ -294,8 +295,8 @@ void demo(int size) {
     BEST_TIME(shuffle_pcg_divisionless(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    BEST_TIME(shuffle_pcg_divisionless_with_slight_bias(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
+    //BEST_TIME(shuffle_pcg_divisionless_with_slight_bias(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    //if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
 
     free(testvalues);
