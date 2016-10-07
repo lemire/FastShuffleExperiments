@@ -305,6 +305,6 @@ void demo(int size) {
 }
 
 int main() {
-    demo(10000);
+    demo(1000);
     return 0;
 }

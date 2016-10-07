@@ -1,21 +1,17 @@
 package me.lemire.microbenchmarks.algorithms;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-@State(Scope.Thread)
+@State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class Shuffle {
@@ -26,19 +22,20 @@ public class Shuffle {
         arr[j] = tmp;
     }
 
-    private static int nextPositiveInteger(ThreadLocalRandom rnd) {
-        int r = rnd.nextInt();
-        return r >>> 1;
+    private static int nextPositiveInteger(Random rnd) {
+        //int r = rnd.nextInt();
+        //return r >>> 1;
+        return rnd.nextInt() & 0x7fffffff;
     }
 
-    public static void shuffle_java(int arr[], ThreadLocalRandom rnd) {
+    private static void shuffle_java(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
         for (int i = size; i > 1; i--)
             swap(arr, i - 1, rnd.nextInt(i));
     }
 
-    static int ranged_random_go(int  range,  ThreadLocalRandom rnd) {
+    private static int ranged_random_go(int  range,  Random rnd) {
       int bits;
       int t = Integer.MAX_VALUE % range;
       do {
@@ -47,7 +44,7 @@ public class Shuffle {
       return bits % range;
     }
 
-    public static void shuffle_go(int arr[], ThreadLocalRandom rnd) {
+    private static void shuffle_go(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
         for (int i = size; i > 1; i--)
@@ -56,7 +53,7 @@ public class Shuffle {
 
 
 
-    static int ranged_random_pcglike(int  range,  ThreadLocalRandom rnd) {
+    private static int ranged_random_pcglike(int  range,  Random rnd) {
       int threshold = (Integer.MAX_VALUE - range + 1) % range;
       for (;;) {
         int u = nextPositiveInteger(rnd);
@@ -64,14 +61,15 @@ public class Shuffle {
             return u % range;
       }
     }
-    public static void shuffle_pcglike(int arr[], ThreadLocalRandom rnd) {
+    
+    private static void shuffle_pcglike(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
         for (int i = size; i > 1; i--)
             swap(arr, i - 1, ranged_random_pcglike(i,rnd));
     }
 
-    static int ranged_random_javalike(int  range,  ThreadLocalRandom rnd) {
+    private static int ranged_random_javalike(int  range,  Random rnd) {
         int urkey = nextPositiveInteger(rnd);
         int candidate = urkey % range;
         while(urkey - candidate > Integer.MAX_VALUE - range + 1 ) {
@@ -81,34 +79,27 @@ public class Shuffle {
         return candidate;
     }
 
-    public static void shuffle_javalike(int arr[], ThreadLocalRandom rnd) {
+    private static void shuffle_javalike(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
         for (int i = size; i > 1; i--)
             swap(arr, i - 1, ranged_random_javalike(i,rnd));
     }
 
-    static int ranged_random_divisionless(int  range,  ThreadLocalRandom rnd) {
-        long random32bit, multiresult;
-        long leftover;
-        if((range & (range - 1)) == 0)
-            return rnd.nextInt() & (range - 1);
-        final long mask = 0xFFFFFFFFL;
-        random32bit = rnd.nextInt()  & mask;
-        multiresult = random32bit * range;
-        leftover = multiresult & mask;
+    private static int ranged_random_divisionless(int  range,  Random rnd) {
+        long multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
+        long leftover = multiresult & 0xFFFFFFFFL;
         if(leftover < range) {
           final long threshold = 0xFFFFFFFF % range;
           while (leftover <= threshold) {
-              random32bit = rnd.nextInt() & mask;
-              multiresult = random32bit * range;
-              leftover =  multiresult & mask;
+              multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
+              leftover =  multiresult & 0xFFFFFFFFL;
           }
         }
         return (int) (multiresult >>> 32); // [0, range)
     }
 
-    public static void shuffle_divisionless(int arr[], ThreadLocalRandom rnd) {
+    private static void shuffle_divisionless(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
         for (int i = size; i > 1; i--)
@@ -117,18 +108,26 @@ public class Shuffle {
 
     @State(Scope.Benchmark)
     public static class BenchmarkState {
-        int N = 10000;
+        int N = 1000;
         int[] array = new int[N];
-
+        int[] pristine;
         public BenchmarkState() {
-            for (int k = 0; k < N; ++k)
-                array[k] = k;
+           for (int k = 0; k < N; ++k)
+                array[k] = Shuffle.nextPositiveInteger(Shuffle.r);
+           pristine = Arrays.copyOf(array, array.length);
+           Arrays.sort(pristine);
         }
-
     }
 
-    static ThreadLocalRandom r = ThreadLocalRandom.current();
 
+    @TearDown 
+    public void check(BenchmarkState s) {
+      Arrays.sort(s.array);
+      boolean sane = Arrays.equals(s.array,s.pristine);
+      if(! sane ) throw new RuntimeException("Bug?");
+    }
+
+    private static ThreadLocalRandom r = ThreadLocalRandom.current();
 
     @Benchmark
     public void test_shuffle_java(BenchmarkState s) {
@@ -152,16 +151,17 @@ public class Shuffle {
 
     @Benchmark
     public void test_shuffle_divisionless(BenchmarkState s) {
-        shuffle_shuffle_divisionless(s.array, r);
+        shuffle_divisionless(s.array, r);
     }
 
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-        .include(Shuffle.class.getSimpleName()).warmupIterations(2)
-        .measurementIterations(3).forks(1).build();
-
+        .include(Shuffle.class.getSimpleName()).warmupIterations(5)
+        .measurementIterations(5).forks(1).build();
         new Runner(opt).run();
     }
 
 }
+
+
