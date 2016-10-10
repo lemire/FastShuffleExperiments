@@ -31,8 +31,7 @@ static inline uint32_t pcg32_random_bounded(uint32_t bound) {
 }
 
 // as per the Java implementation , uses one or more 32-bit divisions
-static inline uint32_t java_random_bounded(uint32_t bound)
-{
+static inline uint32_t java_random_bounded(uint32_t bound) {
     uint32_t rkey = pcg32_random();
     uint32_t candidate = rkey % bound;
     while(rkey - candidate  > UINT32_MAX - bound + 1 ) { // will be predicted as false
@@ -205,8 +204,8 @@ void  shuffle_pcg_java(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
         uint32_t nextpos = java_random_bounded(i);
-        int tmp = storage[i-1];// likely in cache
-        int val = storage[nextpos]; // could be costly
+        uint32_t tmp = storage[i-1];// likely in cache
+        uint32_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
         storage[nextpos] = tmp; // you might have to read this store later
     }
@@ -219,8 +218,8 @@ void  shuffle_pcg_go(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
         uint32_t nextpos = go_random_bounded(i);
-        int tmp = storage[i-1];// likely in cache
-        int val = storage[nextpos]; // could be costly
+        uint32_t tmp = storage[i-1];// likely in cache
+        uint32_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
         storage[nextpos] = tmp; // you might have to read this store later
     }
@@ -256,8 +255,8 @@ void  shuffle_pcg(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
         uint32_t nextpos = pcg32_random_bounded(i);
-        int tmp = storage[i-1];// likely in cache
-        int val = storage[nextpos]; // could be costly
+        uint32_t tmp = storage[i-1];// likely in cache
+        uint32_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
         storage[nextpos] = tmp; // you might have to read this store later
     }
