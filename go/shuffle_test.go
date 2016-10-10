@@ -19,12 +19,7 @@ func benchmark_pcg(b *testing.B, r int) {
 	array := makeRandomArray(r, &p)
 	b.StartTimer()
 	for j := 0; j < b.N; j++ {
-		for i := r; i > 0; i-- {
-			idx := p.Bound(uint32(i))
-			tmp := array[idx]
-			array[idx] = array[i-1]
-			array[i-1] = tmp
-		}
+		shuffle_pcg(array, &p)
 	}
 }
 
@@ -38,12 +33,7 @@ func benchmark_divisionless(b *testing.B, r int) {
 	array := makeRandomArray(r, &p)
 	b.StartTimer()
 	for j := 0; j < b.N; j++ {
-		for i := r; i > 0; i-- {
-			idx := Random_bounded_divisionless(uint32(i), &p)
-			tmp := array[idx]
-			array[idx] = array[i-1]
-			array[i-1] = tmp
-		}
+		shuffle_divisionless(array, &p)
 	}
 }
 
@@ -57,12 +47,7 @@ func benchmark_go(b *testing.B, r int) {
 	array := makeRandomArray(r, &p)
 	b.StartTimer()
 	for j := 0; j < b.N; j++ {
-		for i := r; i > 0; i-- {
-			idx := Random_bounded_go(uint32(i), &p)
-			tmp := array[idx]
-			array[idx] = array[i-1]
-			array[i-1] = tmp
-		}
+		shuffle_go(array, &p)
 	}
 }
 
@@ -76,12 +61,7 @@ func benchmark_java(b *testing.B, r int) {
 	array := makeRandomArray(r, &p)
 	b.StartTimer()
 	for j := 0; j < b.N; j++ {
-		for i := r; i > 0; i-- {
-			idx := Random_bounded_java(uint32(i), &p)
-			tmp := array[idx]
-			array[idx] = array[i-1]
-			array[i-1] = tmp
-		}
+		shuffle_java(array, &p)
 	}
 }
 
