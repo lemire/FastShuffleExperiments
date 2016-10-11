@@ -36,12 +36,12 @@ public class Shuffle {
     }
 
     private static int ranged_random_go(int  range,  Random rnd) {
-      int bits;
-      int t = Integer.MAX_VALUE % range;
-      do {
-          bits = nextPositiveInteger(rnd);
-      } while(bits <= t);
-      return bits % range;
+        int bits;
+        int t = Integer.MAX_VALUE % range;
+        do {
+            bits = nextPositiveInteger(rnd);
+        } while(bits <= t);
+        return bits % range;
     }
 
     private static void shuffle_go(int arr[], Random rnd) {
@@ -54,14 +54,14 @@ public class Shuffle {
 
 
     private static int ranged_random_pcglike(int  range,  Random rnd) {
-      int threshold = (Integer.MAX_VALUE - range + 1) % range;
-      for (;;) {
-        int u = nextPositiveInteger(rnd);
-        if (u >= threshold)
-            return u % range;
-      }
+        int threshold = (Integer.MAX_VALUE - range + 1) % range;
+        for (;;) {
+            int u = nextPositiveInteger(rnd);
+            if (u >= threshold)
+                return u % range;
+        }
     }
-    
+
     private static void shuffle_pcglike(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
@@ -73,8 +73,8 @@ public class Shuffle {
         int urkey = nextPositiveInteger(rnd);
         int candidate = urkey % range;
         while(urkey - candidate > Integer.MAX_VALUE - range + 1 ) {
-           urkey = nextPositiveInteger(rnd);
-           candidate = urkey % range;
+            urkey = nextPositiveInteger(rnd);
+            candidate = urkey % range;
         }
         return candidate;
     }
@@ -90,11 +90,11 @@ public class Shuffle {
         long multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
         long leftover = multiresult & 0xFFFFFFFFL;
         if(leftover < range) {
-          final long threshold = 0xFFFFFFFF % range;
-          while (leftover <= threshold) {
-              multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
-              leftover =  multiresult & 0xFFFFFFFFL;
-          }
+            final long threshold = 0xFFFFFFFF % range;
+            while (leftover <= threshold) {
+                multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
+                leftover =  multiresult & 0xFFFFFFFFL;
+            }
         }
         return (int) (multiresult >>> 32); // [0, range)
     }
@@ -105,6 +105,28 @@ public class Shuffle {
         for (int i = size; i > 1; i--)
             swap(arr, i - 1, ranged_random_divisionless(i,rnd));
     }
+    private static void shuffle_divisionless_inline(int arr[], Random rnd) {
+        int size = arr.length;
+        // Shuffle array
+        for (int i = size; i > 1; i--) {
+            int z;
+            {
+                int range = i;
+                long multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
+                long leftover = multiresult & 0xFFFFFFFFL;
+                if(leftover < range) {
+                    final long threshold = 0xFFFFFFFF % range;
+                    while (leftover <= threshold) {
+                        multiresult = Integer.toUnsignedLong(rnd.nextInt()) * range;
+                        leftover =  multiresult & 0xFFFFFFFFL;
+                    }
+                }
+                z =  (int) (multiresult >>> 32); // [0, range)
+            }
+            swap(arr, i - 1, z);
+        }
+    }
+
 
     @State(Scope.Benchmark)
     public static class BenchmarkState {
@@ -112,19 +134,19 @@ public class Shuffle {
         int[] array = new int[N];
         int[] pristine;
         public BenchmarkState() {
-           for (int k = 0; k < N; ++k)
+            for (int k = 0; k < N; ++k)
                 array[k] = Shuffle.nextPositiveInteger(Shuffle.r);
-           pristine = Arrays.copyOf(array, array.length);
-           Arrays.sort(pristine);
+            pristine = Arrays.copyOf(array, array.length);
+            Arrays.sort(pristine);
         }
     }
 
 
-    @TearDown 
+    @TearDown
     public void check(BenchmarkState s) {
-      Arrays.sort(s.array);
-      boolean sane = Arrays.equals(s.array,s.pristine);
-      if(! sane ) throw new RuntimeException("Bug?");
+        Arrays.sort(s.array);
+        boolean sane = Arrays.equals(s.array,s.pristine);
+        if(! sane ) throw new RuntimeException("Bug?");
     }
 
     private static ThreadLocalRandom r = ThreadLocalRandom.current();
@@ -153,6 +175,11 @@ public class Shuffle {
     public void test_shuffle_divisionless(BenchmarkState s) {
         shuffle_divisionless(s.array, r);
     }
+    @Benchmark
+    public void test_shuffle_divisionless_inline(BenchmarkState s) {
+        shuffle_divisionless_inline(s.array, r);
+    }
+
 
 
     public static void main(String[] args) throws RunnerException {

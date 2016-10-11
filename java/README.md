@@ -1,3 +1,5 @@
+Java provides good results (better than Go) but suffers also from poor inlining. It is possible that bound checking is hurting us as well.
+
 ```
 
         mvn clean install
