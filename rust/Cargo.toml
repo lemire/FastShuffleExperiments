@@ -1,0 +1,9 @@
+[package]
+name = "shuffle"
+version = "0.1.0"
+authors = ["Daniel Lemire <lemire@gmail.com>"]
+license = "WTFPL"
+
+[dependencies]
+rand = "0.3"
+pcg = { git = "https://github.com/codahale/pcg" }
