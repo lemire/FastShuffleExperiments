@@ -10,38 +10,36 @@
 
 
 #include "pcg.h"
-// wrapper around pcg to satisfy fancy C++
-struct PCGUniformRandomBitGenerator {
-  typedef uint32_t result_type;
-  static constexpr result_type min() {return 0;}
-  static constexpr result_type max() {return UINT32_MAX;}
-  uint32_t operator()() {
-   return pcg32_random();
-  }
-};
 
+typedef uint32_t(*randfnc32)();
+
+// return value in [0,bound)
 // as per the PCG implementation , uses two 32-bit divisions
-static inline uint32_t pcg32_random_bounded(uint32_t bound) {
+template <randfnc32 RandomBitGenerator>
+static inline uint32_t random_bounded(uint32_t bound) {
     uint32_t threshold = (~bound + 1) % bound;// -bound % bound
     for (;;) {
-        uint32_t r = pcg32_random();
+        uint32_t r = RandomBitGenerator();
         if (r >= threshold)
             return r % bound;
     }
 }
-
+// return value in [0,bound)
 // as per the Java implementation , uses one or more 32-bit divisions
+template <randfnc32 RandomBitGenerator>
 static inline uint32_t java_random_bounded(uint32_t bound) {
-    uint32_t rkey = pcg32_random();
+    uint32_t rkey = RandomBitGenerator();
     uint32_t candidate = rkey % bound;
     while(rkey - candidate  > UINT32_MAX - bound + 1 ) { // will be predicted as false
-        rkey = pcg32_random();
+        rkey = RandomBitGenerator();
         candidate = rkey % bound;
     }
     return candidate;
 }
 
+// return value in [0,bound)
 // as per the Go implementation
+template <randfnc32 RandomBitGenerator>
 static inline uint32_t go_random_bounded(uint32_t bound) {
   uint32_t bits;
   // optimizing for powers of two is harmful
@@ -50,31 +48,24 @@ static inline uint32_t go_random_bounded(uint32_t bound) {
   //}
   uint32_t t = 0xFFFFFFFF % bound;
   do {
-    bits = pcg32_random();
+    bits = RandomBitGenerator();
   } while(bits <= t);
   return bits % bound;
 }
 
-// map random value to [0,range) with slight bias
-static inline uint32_t pcg32_random_bounded_divisionless_with_slight_bias(uint32_t range) {
-    uint64_t random32bit, multiresult;
-    random32bit =  pcg32_random();
-    multiresult = random32bit * range;
-    return multiresult >> 32; // [0, range)
-}
-
 // map random value to [0,range) with slight bias, redraws to avoid bias if needed
-static inline uint32_t pcg32_random_bounded_divisionless(uint32_t range) {
+template <randfnc32 RandomBitGenerator>
+static inline uint32_t random_bounded_divisionless(uint32_t range) {
     uint64_t random32bit, multiresult;
     uint32_t leftover;
     uint32_t threshold;
-    random32bit =  pcg32_random();
+    random32bit =  RandomBitGenerator();
     multiresult = random32bit * range;
     leftover = (uint32_t) multiresult;
     if(leftover < range ) {
         threshold = -range % range ;
         while (leftover < threshold) {
-            random32bit =  pcg32_random();
+            random32bit =  RandomBitGenerator();
             multiresult = random32bit * range;
             leftover = (uint32_t) multiresult;
         }
@@ -226,10 +217,11 @@ int sortAndCompare(uint32_t * shuf, uint32_t * orig, uint32_t size) {
 
 
 // good old Fisher-Yates shuffle, shuffling an array of integers, uses java-like ranged rng
-void  shuffle_pcg_java(uint32_t *storage, uint32_t size) {
+template <randfnc32 UniformRandomBitGenerator>
+void  shuffle_java(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
-        uint32_t nextpos = java_random_bounded(i);
+        uint32_t nextpos = java_random_bounded<UniformRandomBitGenerator>(i);
         uint32_t tmp = storage[i-1];// likely in cache
         uint32_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
@@ -240,10 +232,11 @@ void  shuffle_pcg_java(uint32_t *storage, uint32_t size) {
 
 
 // good old Fisher-Yates shuffle, shuffling an array of integers, uses go-like ranged rng
-void  shuffle_pcg_go(uint32_t *storage, uint32_t size) {
+template <randfnc32 UniformRandomBitGenerator>
+void  shuffle_go(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
-        uint32_t nextpos = go_random_bounded(i);
+        uint32_t nextpos = go_random_bounded<UniformRandomBitGenerator>(i);
         uint32_t tmp = storage[i-1];// likely in cache
         uint32_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
@@ -251,36 +244,15 @@ void  shuffle_pcg_go(uint32_t *storage, uint32_t size) {
     }
 }
 
-// good old Fisher-Yates shuffle, shuffling an array of integers, without division
-void  shuffle_pcg_divisionless_with_slight_bias(uint32_t *storage, uint32_t size) {
-    uint32_t i;
-    for (i=size; i>1; i--) {
-        uint32_t nextpos = pcg32_random_bounded_divisionless_with_slight_bias(i);
-        uint32_t tmp = storage[i-1];// likely in cache
-        uint32_t val = storage[nextpos]; // could be costly
-        storage[i - 1] = val;
-        storage[nextpos] = tmp; // you might have to read this store later
-    }
-}
 
 
 
 // good old Fisher-Yates shuffle, shuffling an array of integers, without division
-void  shuffle_pcg_divisionless(uint32_t *storage, uint32_t size) {
+template <randfnc32 UniformRandomBitGenerator>
+void  shuffle_divisionless(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
-        uint32_t nextpos = pcg32_random_bounded_divisionless(i);
-        uint32_t tmp = storage[i-1];// likely in cache
-        uint32_t val = storage[nextpos]; // could be costly
-        storage[i - 1] = val;
-        storage[nextpos] = tmp; // you might have to read this store later
-    }
-}
-// good old Fisher-Yates shuffle, shuffling an array of integers, uses the default pgc ranged rng
-void  shuffle_pcg(uint32_t *storage, uint32_t size) {
-    uint32_t i;
-    for (i=size; i>1; i--) {
-        uint32_t nextpos = pcg32_random_bounded(i);
+        uint32_t nextpos = random_bounded_divisionless<UniformRandomBitGenerator>(i);
         uint32_t tmp = storage[i-1];// likely in cache
         uint32_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
@@ -299,7 +271,6 @@ void demo(int size) {
     memcpy(pristinecopy,testvalues,sizeof(uint32_t) * size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    PCGUniformRandomBitGenerator pgcgen;
 
     std::random_device rd;
     std::mt19937 gmt19937(rd());
@@ -309,25 +280,19 @@ void demo(int size) {
     BEST_TIME_NS(std::shuffle(testvalues,testvalues+size,pgcgen), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    BEST_TIME(shuffle_pcg(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_pcg(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+
+
+    BEST_TIME(shuffle_go<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_go<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    BEST_TIME(shuffle_pcg_go(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_pcg_go(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME(shuffle_java<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_java<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    BEST_TIME(shuffle_pcg_java(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_pcg_java(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME(shuffle_divisionless<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_divisionless<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
-
-    BEST_TIME(shuffle_pcg_divisionless(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_pcg_divisionless(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
-
-    //BEST_TIME(shuffle_pcg_divisionless_with_slight_bias(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    //if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
-
 
     free(testvalues);
     free(pristinecopy);
