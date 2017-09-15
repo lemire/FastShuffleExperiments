@@ -1,4 +1,4 @@
-// clang++ -mavx2 -march=native -std=c++11 -O3 -o shuffle shuffle.cpp -Wall -Wextra
+// g++ -mavx2 -march=native -std=c++11 -O3 -o shuffle shuffle.cpp -Wall -Wextra
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,8 +10,36 @@
 
 
 #include "pcg.h"
+#include "lehmer64.h"
+#include "xorshift128plus.h"
+#include "splitmix64.h"
 
-typedef uint32_t(*randfnc32)();
+static inline uint32_t lehmer64_32(void) {
+  return (uint32_t) lehmer64();
+}
+
+static inline uint32_t xorshift128plus_32(void) {
+  return (uint32_t) xorshift128plus();
+}
+
+std::mt19937 mersenne;
+
+static inline uint32_t twister(void) {
+  return (uint32_t) mersenne();
+}
+
+typedef uint32_t(*randfnc32)(void);
+
+// wrapper to satisfy fancy C++
+template <randfnc32 RandomBitGenerator>
+struct UniformRandomBitGenerator {
+   typedef uint32_t result_type;
+   static constexpr result_type min() {return 0;}
+  static constexpr result_type max() {return UINT32_MAX;}
+   uint32_t operator()() {
+   return RandomBitGenerator();
+   }
+ };
 
 // return value in [0,bound)
 // as per the PCG implementation , uses two 32-bit divisions
@@ -24,6 +52,12 @@ static inline uint32_t random_bounded(uint32_t bound) {
             return r % bound;
     }
 }
+
+template <randfnc32 RandomBitGenerator>
+static inline uint32_t floatmult_random_bounded(uint32_t bound) {
+    return (uint32_t)((float)(RandomBitGenerator() & 0xffffff) / (float) (1 << 24) * bound );
+}
+
 // return value in [0,bound)
 // as per the Java implementation , uses one or more 32-bit divisions
 template <randfnc32 RandomBitGenerator>
@@ -230,6 +264,19 @@ void  shuffle_java(uint32_t *storage, uint32_t size) {
 }
 
 
+// good old Fisher-Yates shuffle, shuffling an array of integers
+template <randfnc32 UniformRandomBitGenerator>
+void  shuffle_floatmult(uint32_t *storage, uint32_t size) {
+    uint32_t i;
+    for (i=size; i>1; i--) {
+        uint32_t nextpos = floatmult_random_bounded<UniformRandomBitGenerator>(i);
+        uint32_t tmp = storage[i-1];// likely in cache
+        uint32_t val = storage[nextpos]; // could be costly
+        storage[i - 1] = val;
+        storage[nextpos] = tmp; // you might have to read this store later
+    }
+}
+
 
 // good old Fisher-Yates shuffle, shuffling an array of integers, uses go-like ranged rng
 template <randfnc32 UniformRandomBitGenerator>
@@ -260,8 +307,9 @@ void  shuffle_divisionless(uint32_t *storage, uint32_t size) {
     }
 }
 
-
+template <randfnc32 rfnc32>
 void demo(int size) {
+    printf(" %s\n", __PRETTY_FUNCTION__);
     printf("Shuffling arrays of size %d \n",size);
     printf("Time reported in number of cycles per array element.\n");
     printf("Tests assume that array is in cache as much as possible.\n");
@@ -275,23 +323,26 @@ void demo(int size) {
     std::random_device rd;
     std::mt19937 gmt19937(rd());
 
+    UniformRandomBitGenerator<rfnc32> gen;
 
-    BEST_TIME(std::shuffle(testvalues,testvalues+size,pgcgen), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(std::shuffle(testvalues,testvalues+size,pgcgen), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME(std::shuffle(testvalues,testvalues+size,gen), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(std::shuffle(testvalues,testvalues+size,gen), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-
-
-    BEST_TIME(shuffle_go<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_go<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME(shuffle_go<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_go<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    BEST_TIME(shuffle_java<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_java<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME(shuffle_java<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_java<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
-    BEST_TIME(shuffle_divisionless<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
-    BEST_TIME_NS(shuffle_divisionless<pcg32_random>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME(shuffle_floatmult<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_floatmult<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
+
+    BEST_TIME(shuffle_divisionless<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
+    BEST_TIME_NS(shuffle_divisionless<rfnc32>(testvalues,size), array_cache_prefetch(testvalues,size), repeat, size);
     if(sortAndCompare(testvalues, pristinecopy, size)!=0) return;
 
     free(testvalues);
@@ -300,6 +351,18 @@ void demo(int size) {
 }
 
 int main() {
-    demo(1000);
+    const size_t N = 1000;
+    xorshift128plus_seed(1234);
+    splitmix64_seed(1234);
+    lehmer64_seed(1234);
+
+    demo<pcg32_random>(N);
+    demo<lehmer64_32>(N);
+    demo<xorshift128plus_32>(N);
+    demo<splitmix64_cast32>(N);
+    demo<twister>(N);
+
+
+
     return 0;
 }
