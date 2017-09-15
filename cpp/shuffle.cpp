@@ -350,11 +350,88 @@ void demo(int size) {
     printf("\n");
 }
 
+bool alltrue(bool * possibilities, size_t N) {
+  for(size_t i = 0 ; i < N; i++)
+    if(!possibilities[i]) return false;
+  return true;
+}
+
+template <randfnc32 rfnc32>
+void test() {
+  const int N = 3;
+  uint32_t testvalues[3];
+  testvalues[0] = 0;
+  testvalues[1] = 1;
+  testvalues[2] = 2;
+
+  // there is a smarter way to do this:
+
+  {
+    bool possibilities[6] = {0};
+    while(!alltrue(possibilities,6)) {
+      shuffle_go<rfnc32>(testvalues,N);
+      uint32_t c =  testvalues[1];
+      for(uint32_t z = 0; z < 3; z++) {
+        if(z ==  testvalues[1]) continue;
+        if( z == testvalues[0]) break;
+        c += 3;
+      }
+      possibilities[c] = true;
+    }
+  }
+
+
+  {
+    bool possibilities[6] = {0};
+    while(!alltrue(possibilities,6)) {
+      shuffle_java<rfnc32>(testvalues,N);
+      uint32_t c =  testvalues[1];
+      for(uint32_t z = 0; z < 3; z++) {
+        if(z ==  testvalues[1]) continue;
+        if( z == testvalues[0]) break;
+        c += 3;
+      }
+      possibilities[c] = true;
+    }
+  }
+
+  {
+    bool possibilities[6] = {0};
+    while(!alltrue(possibilities,6)) {
+      shuffle_floatmult<rfnc32>(testvalues,N);
+      uint32_t c =  testvalues[1];
+      for(uint32_t z = 0; z < 3; z++) {
+        if(z ==  testvalues[1]) continue;
+        if( z == testvalues[0]) break;
+        c += 3;
+      }
+      possibilities[c] = true;
+    }
+  }
+
+  {
+    bool possibilities[6] = {0};
+    while(!alltrue(possibilities,6)) {
+      shuffle_divisionless<rfnc32>(testvalues,N);
+      uint32_t c =  testvalues[1];
+      for(uint32_t z = 0; z < 3; z++) {
+        if(z ==  testvalues[1]) continue;
+        if( z == testvalues[0]) break;
+        c += 3;
+      }
+      possibilities[c] = true;
+    }
+  }
+
+}
+
 int main() {
     const size_t N = 1000;
     xorshift128plus_seed(1234);
     splitmix64_seed(1234);
     lehmer64_seed(1234);
+
+    test<pcg32_random>();
 
     demo<pcg32_random>(N);
     demo<lehmer64_32>(N);
