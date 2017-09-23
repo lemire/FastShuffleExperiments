@@ -72,7 +72,7 @@ static inline uint32_t java_random_bounded(uint32_t bound) {
 }
 
 // return value in [0,bound)
-// as per the Go implementation
+// similar to the Go implementation and arc4random_uniform
 template <randfnc32 RandomBitGenerator>
 static inline uint32_t go_random_bounded(uint32_t bound) {
   uint32_t bits;
@@ -80,10 +80,11 @@ static inline uint32_t go_random_bounded(uint32_t bound) {
   //if((bound & (bound - 1)) == 0) {
   //    return pcg32_random() & (bound - 1);
   //}
-  uint32_t t = 0xFFFFFFFF % bound;
+  //uint32_t t = 0xFFFFFFFF % bound;
+  uint32_t t = - bound % bound ; // this is 2^32 % bound
   do {
     bits = RandomBitGenerator();
-  } while(bits <= t);
+  } while(bits < t);
   return bits % bound;
 }
 
