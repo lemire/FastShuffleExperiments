@@ -108,14 +108,15 @@ static inline uint64_t java_random_bounded64(uint64_t bound) {
 }
 
 // return value in [0,bound)
-// as per the Go implementation
+// similar to the Go implementation and arc4random_uniform
 template <randfnc32 RandomBitGenerator>
 static inline uint32_t go_random_bounded32(uint32_t bound) {
   uint32_t bits;
-  uint32_t t = UINT32_C(0xFFFFFFFF) % bound;
+  // optimizing for powers of two is harmful
+  uint32_t t = (- bound) % bound ; // this is 2^32 % bound
   do {
     bits = RandomBitGenerator();
-  } while (bits <= t);
+  } while(bits < t);
   return bits % bound;
 }
 
@@ -124,7 +125,8 @@ static inline uint32_t go_random_bounded32(uint32_t bound) {
 template <randfnc64 RandomBitGenerator>
 static inline uint64_t go_random_bounded64(uint64_t bound) {
   uint64_t bits;
-  uint64_t t = UINT64_C(0xFFFFFFFFFFFFFFFF) % bound;
+  // optimizing for powers of two is harmful
+  uint64_t t = (- bound) % bound;
   do {
     bits = RandomBitGenerator();
   } while (bits <= t);
@@ -657,13 +659,11 @@ int main() {
 
   test<pcg32_random>();
   for (size_t N = 10; N < 10000000; N *= 10) {
-
-    // ShuffleBenchmark32<pcg32_random>(N);
     ShuffleBenchmark32<lehmer64_32>(N, false);
+    // ShuffleBenchmark32<pcg32_random>(N);
     // ShuffleBenchmark32<xorshift128plus_32>(N);
     // ShuffleBenchmark32<splitmix64_cast32>(N);
     // ShuffleBenchmark32<twister>(N);
-
     ShuffleBenchmark64<lehmer64>(N, false);
   }
   return 0;
