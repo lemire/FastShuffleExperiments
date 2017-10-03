@@ -1,1 +1,1 @@
-Go suffers from poor inlining and crazy bound checking
+Go suffers from poor inlining and  bound checking
