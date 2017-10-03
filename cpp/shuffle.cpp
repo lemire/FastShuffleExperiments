@@ -222,14 +222,6 @@ uint32_t *create_random_array(size_t count) {
   return targets;
 }
 
-// flushes the array from cache
-void array_cache_flush(uint32_t *B, int32_t length) {
-  const int32_t CACHELINESIZE = 64; // 64 bytes per cache line
-  for (int32_t k = 0; k < length; k += CACHELINESIZE / sizeof(uint32_t)) {
-    __builtin_ia32_clflush(B + k);
-  }
-}
-
 // tries to put the array in cache
 void array_cache_prefetch(uint32_t *B, int32_t length) {
   const int32_t CACHELINESIZE = 64; // 64 bytes per cache line
