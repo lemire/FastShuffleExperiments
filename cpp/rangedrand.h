@@ -1,10 +1,10 @@
-#include <stdint.h>
 #include <random>
+#include <stdint.h>
 
-#include "pcg.h"
 #include "lehmer64.h"
-#include "xorshift128plus.h"
+#include "pcg.h"
 #include "splitmix64.h"
+#include "xorshift128plus.h"
 
 static void setseed(uint64_t seed) {
   xorshift128plus_seed(seed);
@@ -15,14 +15,12 @@ static void setseed(uint64_t seed) {
 static inline uint32_t lehmer64_32(void) { return (uint32_t)lehmer64(); }
 
 static inline uint32_t xorshift128plus_32(void) {
-  return (uint32_t) xorshift128plus();
+  return (uint32_t)xorshift128plus();
 }
 
 std::mt19937 mersenne;
 
-static inline uint32_t twister32(void) {
-  return (uint32_t) mersenne();
-}
+static inline uint32_t twister32(void) { return (uint32_t)mersenne(); }
 
 typedef uint64_t (*randfnc64)(void);
 
@@ -56,7 +54,6 @@ template <randfnc64 RandomBitGenerator>
 static inline uint64_t naive_random_bounded64(uint64_t bound) {
   return RandomBitGenerator() % bound;
 }
-
 
 // return value in [0,bound)
 // as per the PCG implementation , uses two 32-bit divisions
@@ -125,10 +122,10 @@ template <randfnc32 RandomBitGenerator>
 static inline uint32_t go_random_bounded32(uint32_t bound) {
   uint32_t bits;
   // optimizing for powers of two is harmful
-  uint32_t t = (- bound) % bound ; // this is 2^32 % bound
+  uint32_t t = (-bound) % bound; // this is 2^32 % bound
   do {
     bits = RandomBitGenerator();
-  } while(bits < t);
+  } while (bits < t);
   return bits % bound;
 }
 
@@ -138,7 +135,7 @@ template <randfnc64 RandomBitGenerator>
 static inline uint64_t go_random_bounded64(uint64_t bound) {
   uint64_t bits;
   // optimizing for powers of two is harmful
-  uint64_t t = (- bound) % bound;
+  uint64_t t = (-bound) % bound;
   do {
     bits = RandomBitGenerator();
   } while (bits <= t);

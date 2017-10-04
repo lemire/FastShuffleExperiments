@@ -1,82 +1,104 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
-#include <vector>
 #include "chisqr.h"
 #include "rangedrand.h"
 #include <cassert>
-
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <vector>
 
 typedef uint32_t (*rangedfnc32)(uint32_t);
 typedef uint64_t (*rangedfnc64)(uint64_t);
 
-template<rangedfnc32 fnc>
-bool isuniform32(size_t N, double tol = 0.99) {
-  std::vector<double> counts (N);
-  size_t volume = 1000 * N;
-  for(size_t i = 0; i < volume; i++) {
+template <rangedfnc32 fnc>
+bool isuniform32(size_t N, double &ret, bool verbose = true,
+                 double tol = 0.01) {
+  std::vector<double> counts(N);
+  size_t volume = 10000 * N;
+  for (size_t i = 0; i < volume; i++) {
     counts[fnc(N)] += 1.0;
   }
-  long double expected = volume * (long double)1.0 / N;
-  long double sum = 0;
-  for(size_t i = 0; i < N; i++) {
-    long double x = (long double)counts[i] - expected;
+  double expected = (double)volume / N;
+  double sum = 0;
+  for (size_t i = 0; i < N; i++) {
+    double x = counts[i] - expected;
     sum += x * x / expected;
   }
-  double ret = chisqr(N - 1, sum);
-  printf("%f \n", ret);
+  ret = chisqr(N - 1, sum);
+  if (ret < tol) {
+    if (verbose)
+      printf(" %s fails with %f [%f] N = %zu \n", __PRETTY_FUNCTION__, ret, sum,
+             N);
+  }
   return ret >= tol;
 }
 
-template<rangedfnc64 fnc>
-bool isuniform64(size_t N, double tol = 0.99) {
-  std::vector<double> counts (N);
-  size_t volume = 1000 * N;
-  for(size_t i = 0; i < volume; i++) {
+template <rangedfnc64 fnc>
+bool isuniform64(size_t N, double &ret, bool verbose = true,
+                 double tol = 0.01) {
+  std::vector<double> counts(N);
+  size_t volume = 10000 * N;
+  for (size_t i = 0; i < volume; i++) {
     counts[fnc(N)] += 1.0;
   }
-  long double expected = volume * (long double) 1.0 / N;
-  long double sum = 0;
-  for(size_t i = 0; i < N; i++) {
-    long double x = counts[i] - expected;
+  double expected = (double)volume / N;
+  double sum = 0;
+  for (size_t i = 0; i < N; i++) {
+    double x = counts[i] - expected;
     sum += x * x / expected;
   }
-  double ret = chisqr(N - 1, sum);
-  printf("%f \n", ret);
-
+  ret = chisqr(N - 1, sum);
+  if (ret < tol) {
+    if (verbose)
+      printf(" %s fails with %f [%f] N = %zu \n", __PRETTY_FUNCTION__, ret, sum,
+             N);
+  }
   return ret >= tol;
 }
 
+uint32_t bad(uint32_t x) { return x - 1; }
 
-uint32_t bad(uint32_t x) {return x-1;}
-
-uint32_t badbutbetter(uint32_t x) {return rand() % (x - 1);}
-uint32_t notgreat(uint32_t x) {return rand() % x;}
+uint32_t badbutbetter(uint32_t x) { return rand() % (x - 1); }
+uint32_t notgreat(uint32_t x) { return rand() % x; }
 
 int main() {
   setseed(1234);
-  size_t N = 1000;
-  //for( N = 500; N <= 50000; N*=10) {
-    printf("range = %zu\n",N);
-  assert(!isuniform32<bad >(N));
-  assert(!isuniform32<badbutbetter >(N));
-  printf("rand mod : %s\n", isuniform32<notgreat >(N) ? "passes" : "fails");
-
-  assert(isuniform32<random_bounded32<lehmer64_32> >(N));
-  assert(isuniform32<java_random_bounded32<lehmer64_32> >(N));
-  assert(isuniform32<go_random_bounded32<lehmer64_32> >(N));
-  assert(isuniform32<random_bounded_nearlydivisionless32<lehmer64_32> >(N));
-  assert(isuniform32<floatmult_random_bounded32<lehmer64_32> >(N));
-  assert(isuniform32<naive_random_bounded32<lehmer64_32> >(N));
-  printf("\n");
-  assert(isuniform64<random_bounded64<lehmer64> >(N));
-  assert(isuniform64<java_random_bounded64<lehmer64> >(N));
-  assert(isuniform64<go_random_bounded64<lehmer64> >(N));
-  assert(isuniform64<random_bounded_nearlydivisionless64<lehmer64> >(N));
-  assert(isuniform64<floatmult_random_bounded64<lehmer64> >(N));
-  assert(isuniform64<naive_random_bounded64<lehmer64> >(N));
-//}
-  printf("Results look good. Functions pass sanity check. \n");
-
+  size_t success = 0;
+  size_t total = 0;
+  for (size_t N = 2; N <= 300; N += 1) {
+    if (chisqr(N - 1, 0) < 1.0)
+      printf("N = %zu \n", N);
+    assert(chisqr(N - 1, 0) == 1);
+    double ret = 0;
+    for(size_t repeat = 0; repeat < 5; repeat ++) {
+    assert(!isuniform32<bad>(N, ret, false));
+    assert(!isuniform32<badbutbetter>(N, ret, false));
+    bool randok = isuniform32<notgreat>(N, ret, false);
+    if (!randok)
+      printf("rand mod %zu : fails\n", N);
+    total += 12;
+    success += (isuniform32<random_bounded32<lehmer64_32>>(N, ret));
+    success += (isuniform32<java_random_bounded32<lehmer64_32>>(N, ret));
+    success += (isuniform32<go_random_bounded32<lehmer64_32>>(N, ret));
+    success +=
+        (isuniform32<random_bounded_nearlydivisionless32<lehmer64_32>>(N, ret));
+    success += (isuniform32<floatmult_random_bounded32<lehmer64_32>>(N, ret));
+    success += (isuniform32<naive_random_bounded32<lehmer64_32>>(N, ret));
+    success += (isuniform64<random_bounded64<lehmer64>>(N, ret));
+    success += (isuniform64<java_random_bounded64<lehmer64>>(N, ret));
+    success += (isuniform64<go_random_bounded64<lehmer64>>(N, ret));
+    success +=
+        (isuniform64<random_bounded_nearlydivisionless64<lehmer64>>(N, ret));
+    success += (isuniform64<floatmult_random_bounded64<lehmer64>>(N, ret));
+    success += (isuniform64<naive_random_bounded64<lehmer64>>(N, ret));
+}
+  }
+  if (total - success < 0.05 * total) {
+    printf("Results look good, successes = %zu out of %zu. Functions pass "
+           "sanity check. \n",
+           success, total);
+  } else {
+    printf("Results are a problem. Report an issue. \n");
+    return -1;
+  }
 }

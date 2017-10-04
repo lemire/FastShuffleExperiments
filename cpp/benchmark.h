@@ -1,8 +1,7 @@
-#include <stdint.h>
 #include <chrono>
+#include <stdint.h>
 
 typedef std::chrono::high_resolution_clock Clock;
-
 
 #define RDTSC_START(cycles)                                                    \
   do {                                                                         \
@@ -27,8 +26,6 @@ typedef std::chrono::high_resolution_clock Clock;
                      "%rdx");                                                  \
     (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                           \
   } while (0)
-
-
 
 /*
  * Prints the best number of operations per cycle where

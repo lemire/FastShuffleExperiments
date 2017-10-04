@@ -19,8 +19,8 @@
 
 */
 
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 /** gamma function
  * taken from http://www.crbond.com/math.htm (Gamma function in C/C++ for real
  * arguments, ported from Zhang and Jin)
@@ -110,7 +110,7 @@ static double gamma0(double x) {
  * @param gip
  * @return
  */
-static int incog(double a, double x, double& gin, double& gim, double& gip) {
+static int incog(double a, double x, double &gin, double &gim, double &gip) {
   double xam, r, s, ga, t0;
   int k;
 
@@ -169,7 +169,9 @@ static double chisqr(int Dof, double Cv) {
   if (Dof == 2) {
     return exp(-1.0 * X);
   }
-  double gin, gim, gip;
+  double gin = 0.0;
+  double gim = 0.0;
+  double gip = 0.0;
   incog(K, X, gin, gim, gip); // compute incomplete gamma function
   double PValue = gim;
   PValue /= gamma0(K); // divide by gamma function value

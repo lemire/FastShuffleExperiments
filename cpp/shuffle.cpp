@@ -1,14 +1,13 @@
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
-#include <string.h>
-#include <algorithm>
-#include <random>
-#include "benchmark.h"
 #include "shuffle.h"
-
+#include "benchmark.h"
+#include <algorithm>
+#include <math.h>
+#include <random>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /**
 Sorting stuff
@@ -64,15 +63,17 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
     printf("%zu ", size);
   }
   int repeat = 5;
-  if(size < 1000000) repeat = 50;
-  if(size > 10000000) repeat = 1;
+  if (size < 1000000)
+    repeat = 50;
+  if (size > 10000000)
+    repeat = 1;
   bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
   memcpy(pristinecopy, testvalues, sizeof(uint32_t) * size);
 
 #ifdef INCLUDESTDSHUFFLE
-   UniformRandomBitGenerator32Struct<rfnc32> gen;
+  UniformRandomBitGenerator32Struct<rfnc32> gen;
 
   // BEST_TIME(std::shuffle(testvalues, testvalues + size, gen),
   //          array_cache_prefetch(testvalues, size), repeat, size);
@@ -82,28 +83,27 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
     return;
 #endif
 
-
   // BEST_TIME(shuffle_go32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_go32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 
   // BEST_TIME(shuffle_java32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_java32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 
 #ifdef INCLUDEFLOAT
-   // BEST_TIME(shuffle_floatmult32<rfnc32>(testvalues, size),
+  // BEST_TIME(shuffle_floatmult32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_floatmult32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 #endif
 
   // BEST_TIME(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
@@ -111,7 +111,7 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   BEST_TIME_NS(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 
   free(testvalues);
   free(pristinecopy);
@@ -128,8 +128,10 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
     printf("%zu ", size);
   }
   int repeat = 5;
-  if(size < 1000000) repeat = 50;
-  if(size > 10000000) repeat = 1;
+  if (size < 1000000)
+    repeat = 50;
+  if (size > 10000000)
+    repeat = 1;
   bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
@@ -142,7 +144,7 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 #endif
 
   // BEST_TIME(shuffle_go64<rfnc64>(testvalues, size),
@@ -150,29 +152,29 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
   BEST_TIME_NS(shuffle_go64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 
   // BEST_TIME(shuffle_java64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_java64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 
   // BEST_TIME(shuffle_floatmult64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_floatmult64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 
 #ifdef INCLUDEFLOAT
-   // BEST_TIME(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
+  // BEST_TIME(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-     return;
+    return;
 #endif
 
   free(testvalues);
@@ -263,7 +265,6 @@ template <randfnc32 rfnc32> void test() {
 
 int main() {
   setseed(12345);
-
 
   test<pcg32_random>();
   for (size_t N = 10; N <= 1000 * 1000 * 1000; N *= 10) {

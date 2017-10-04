@@ -1,5 +1,5 @@
-#include <stdint.h>
 #include "rangedrand.h"
+#include <stdint.h>
 
 // good old Fisher-Yates shuffle, shuffling an array of integers, uses java-like
 // ranged rng

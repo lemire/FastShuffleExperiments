@@ -6,8 +6,9 @@
 static __uint128_t g_lehmer64_state;
 
 /**
-* D. H. Lehmer, Mathematical methods in large-scale computing units. 
-* Proceedings of a Second Symposium on Large Scale Digital Calculating Machinery;
+* D. H. Lehmer, Mathematical methods in large-scale computing units.
+* Proceedings of a Second Symposium on Large Scale Digital Calculating
+* Machinery;
 * Annals of the Computation Laboratory, Harvard Univ. 26 (1951), pp. 141-146.
 */
 
