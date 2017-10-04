@@ -18,6 +18,7 @@ Sorting stuff
 int qsort_compare_uint32_t(const void *a, const void *b) {
   return (*(uint32_t *)a - *(uint32_t *)b);
 }
+
 uint32_t *create_sorted_array(size_t length) {
   uint32_t *array = (uint32_t *)malloc(length * sizeof(uint32_t));
   for (size_t i = 0; i < length; i++)
@@ -31,14 +32,6 @@ uint32_t *create_random_array(size_t count) {
   for (size_t i = 0; i < count; i++)
     targets[i] = (uint32_t)(pcg32_random() & 0x7FFFFFF);
   return targets;
-}
-
-// flushes the array from cache
-void array_cache_flush(uint32_t *B, int32_t length) {
-  const int32_t CACHELINESIZE = 64; // 64 bytes per cache line
-  for (int32_t k = 0; k < length; k += CACHELINESIZE / sizeof(uint32_t)) {
-    __builtin_ia32_clflush(B + k);
-  }
 }
 
 // tries to put the array in cache
@@ -60,7 +53,6 @@ int sortAndCompare(uint32_t *shuf, uint32_t *orig, uint32_t size) {
   return 0;
 }
 
-
 template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   if (verbose) {
 
@@ -71,52 +63,55 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   } else {
     printf("%zu ", size);
   }
-  int repeat = 500;
+  int repeat = 5;
+  if(size < 1000000) repeat = 50;
+  if(size > 10000000) repeat = 1;
+  bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
   memcpy(pristinecopy, testvalues, sizeof(uint32_t) * size);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
 
-  std::random_device rd;
-  std::mt19937 gmt19937(rd());
-
-  UniformRandomBitGenerator32Struct<rfnc32> gen;
+#ifdef INCLUDESTDSHUFFLE
+   UniformRandomBitGenerator32Struct<rfnc32> gen;
 
   // BEST_TIME(std::shuffle(testvalues, testvalues + size, gen),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
+#endif
+
 
   // BEST_TIME(shuffle_go32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_go32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
 
   // BEST_TIME(shuffle_java32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_java32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
 
-  // BEST_TIME(shuffle_floatmult32<rfnc32>(testvalues, size),
+#ifdef INCLUDEFLOAT
+   // BEST_TIME(shuffle_floatmult32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_floatmult32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
+#endif
 
   // BEST_TIME(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
 
   free(testvalues);
   free(pristinecopy);
@@ -132,52 +127,53 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
   } else {
     printf("%zu ", size);
   }
-  int repeat = 500;
+  int repeat = 5;
+  if(size < 1000000) repeat = 50;
+  if(size > 10000000) repeat = 1;
+  bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
   memcpy(pristinecopy, testvalues, sizeof(uint32_t) * size);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
 
-  std::random_device rd;
-  std::mt19937 gmt19937(rd());
-
+#ifdef INCLUDESTDSHUFFLE
   UniformRandomBitGenerator64Struct<rfnc64> gen;
-
   // BEST_TIME(std::shuffle(testvalues, testvalues + size, gen),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
+#endif
 
   // BEST_TIME(shuffle_go64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_go64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
 
   // BEST_TIME(shuffle_java64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_java64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
 
   // BEST_TIME(shuffle_floatmult64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_floatmult64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
 
-  // BEST_TIME(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
+#ifdef INCLUDEFLOAT
+   // BEST_TIME(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortAndCompare(testvalues, pristinecopy, size) != 0)
-    return;
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+     return;
+#endif
 
   free(testvalues);
   free(pristinecopy);
@@ -270,7 +266,7 @@ int main() {
 
 
   test<pcg32_random>();
-  for (size_t N = 10; N < 10000000; N *= 10) {
+  for (size_t N = 10; N <= 1000 * 1000 * 1000; N *= 10) {
     ShuffleBenchmark32<lehmer64_32>(N, false);
     // ShuffleBenchmark32<pcg32_random>(N);
     // ShuffleBenchmark32<xorshift128plus_32>(N);
