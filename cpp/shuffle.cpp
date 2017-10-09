@@ -51,6 +51,7 @@ int sortAndCompare(uint32_t *shuf, uint32_t *orig, uint32_t size) {
     }
   return 0;
 }
+#define INCLUDEFLOAT
 
 template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   if (verbose) {
@@ -167,7 +168,6 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
-
 #ifdef INCLUDEFLOAT
   // BEST_TIME(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
   //          array_cache_prefetch(testvalues, size), repeat, size);
