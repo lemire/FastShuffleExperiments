@@ -3,5 +3,4 @@ all:
 	 $(CXX) -std=c++11 -ggdb -O3 -o stattests stattests.cpp -Wall -Wextra
 
 test:
-	./stattests
 	./shuffle

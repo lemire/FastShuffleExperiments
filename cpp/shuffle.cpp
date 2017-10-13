@@ -76,39 +76,29 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
 #ifdef INCLUDESTDSHUFFLE
   UniformRandomBitGenerator32Struct<rfnc32> gen;
 
-  // BEST_TIME(std::shuffle(testvalues, testvalues + size, gen),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #endif
 
-  // BEST_TIME(shuffle_go32<rfnc32>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_go32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 
-  // BEST_TIME(shuffle_java32<rfnc32>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_java32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 
 #ifdef INCLUDEFLOAT
-  // BEST_TIME(shuffle_floatmult32<rfnc32>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_floatmult32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #endif
 
-  // BEST_TIME(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
@@ -123,7 +113,7 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
   if (verbose) {
     printf(" %s\n", __PRETTY_FUNCTION__);
     printf("Shuffling arrays of size %zu \n", size);
-    printf("Time reported in number of cycles per array element.\n");
+    printf("Time reported in number of ns per array element.\n");
     printf("Tests assume that array is in cache as much as possible.\n");
   } else {
     printf("%zu ", size);
@@ -140,37 +130,26 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
 
 #ifdef INCLUDESTDSHUFFLE
   UniformRandomBitGenerator64Struct<rfnc64> gen;
-  // BEST_TIME(std::shuffle(testvalues, testvalues + size, gen),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #endif
 
-  // BEST_TIME(shuffle_go64<rfnc64>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_go64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 
-  // BEST_TIME(shuffle_java64<rfnc64>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_java64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
-
-  // BEST_TIME(shuffle_floatmult64<rfnc64>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_floatmult64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #ifdef INCLUDEFLOAT
-  // BEST_TIME(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
-  //          array_cache_prefetch(testvalues, size), repeat, size);
   BEST_TIME_NS(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
                array_cache_prefetch(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
@@ -182,97 +161,22 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
   printf("\n");
 }
 
-bool alltrue(bool *possibilities, size_t N) {
-  for (size_t i = 0; i < N; i++)
-    if (!possibilities[i])
-      return false;
-  return true;
-}
-
-template <randfnc32 rfnc32> void test() {
-  const int N = 3;
-  uint32_t testvalues[3];
-  testvalues[0] = 0;
-  testvalues[1] = 1;
-  testvalues[2] = 2;
-
-  // there is a smarter way to do this:
-
-  {
-    bool possibilities[6] = {0};
-    while (!alltrue(possibilities, 6)) {
-      shuffle_go32<rfnc32>(testvalues, N);
-      uint32_t c = testvalues[1];
-      for (uint32_t z = 0; z < 3; z++) {
-        if (z == testvalues[1])
-          continue;
-        if (z == testvalues[0])
-          break;
-        c += 3;
-      }
-      possibilities[c] = true;
-    }
-  }
-
-  {
-    bool possibilities[6] = {0};
-    while (!alltrue(possibilities, 6)) {
-      shuffle_java32<rfnc32>(testvalues, N);
-      uint32_t c = testvalues[1];
-      for (uint32_t z = 0; z < 3; z++) {
-        if (z == testvalues[1])
-          continue;
-        if (z == testvalues[0])
-          break;
-        c += 3;
-      }
-      possibilities[c] = true;
-    }
-  }
-
-  {
-    bool possibilities[6] = {0};
-    while (!alltrue(possibilities, 6)) {
-      shuffle_floatmult<rfnc32>(testvalues, N);
-      uint32_t c = testvalues[1];
-      for (uint32_t z = 0; z < 3; z++) {
-        if (z == testvalues[1])
-          continue;
-        if (z == testvalues[0])
-          break;
-        c += 3;
-      }
-      possibilities[c] = true;
-    }
-  }
-
-  {
-    bool possibilities[6] = {0};
-    while (!alltrue(possibilities, 6)) {
-      shuffle_nearlydivisionless32<rfnc32>(testvalues, N);
-      uint32_t c = testvalues[1];
-      for (uint32_t z = 0; z < 3; z++) {
-        if (z == testvalues[1])
-          continue;
-        if (z == testvalues[0])
-          break;
-        c += 3;
-      }
-      possibilities[c] = true;
-    }
-  }
-}
-
 int main() {
   setseed(12345);
 
-  test<pcg32_random>();
+  printf("# We interleave 32-bit / 64-bit results. \n");
+  printf("# First column uses an OpenBSD-like approach with two divisions per "
+         "ranged random number.\n");
+  printf("# Second column uses a Java-like approach with one or more divisions "
+         "per ranged random number.\n");
+  printf("# Third column uses an approach with nearly no division per ranged "
+         "random number.\n");
+
+  printf("# Time reported in number of ns per array element in a random "
+         "shuffle.\n");
+
   for (size_t N = 10; N <= 1000 * 1000 * 1000; N *= 10) {
     ShuffleBenchmark32<lehmer64_32>(N, false);
-    // ShuffleBenchmark32<pcg32_random>(N);
-    // ShuffleBenchmark32<xorshift128plus_32>(N);
-    // ShuffleBenchmark32<splitmix64_cast32>(N);
-    // ShuffleBenchmark32<twister>(N);
     ShuffleBenchmark64<lehmer64>(N, false);
   }
   return 0;

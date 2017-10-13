@@ -70,28 +70,28 @@ int main() {
       printf("N = %zu \n", N);
     assert(chisqr(N - 1, 0) == 1);
     double ret = 0;
-    for(size_t repeat = 0; repeat < 5; repeat ++) {
-    assert(!isuniform32<bad>(N, ret, false));
-    assert(!isuniform32<badbutbetter>(N, ret, false));
-    bool randok = isuniform32<notgreat>(N, ret, false);
-    if (!randok)
-      printf("rand mod %zu : fails\n", N);
-    total += 12;
-    success += (isuniform32<random_bounded32<lehmer64_32>>(N, ret));
-    success += (isuniform32<java_random_bounded32<lehmer64_32>>(N, ret));
-    success += (isuniform32<go_random_bounded32<lehmer64_32>>(N, ret));
-    success +=
-        (isuniform32<random_bounded_nearlydivisionless32<lehmer64_32>>(N, ret));
-    success += (isuniform32<floatmult_random_bounded32<lehmer64_32>>(N, ret));
-    success += (isuniform32<naive_random_bounded32<lehmer64_32>>(N, ret));
-    success += (isuniform64<random_bounded64<lehmer64>>(N, ret));
-    success += (isuniform64<java_random_bounded64<lehmer64>>(N, ret));
-    success += (isuniform64<go_random_bounded64<lehmer64>>(N, ret));
-    success +=
-        (isuniform64<random_bounded_nearlydivisionless64<lehmer64>>(N, ret));
-    success += (isuniform64<floatmult_random_bounded64<lehmer64>>(N, ret));
-    success += (isuniform64<naive_random_bounded64<lehmer64>>(N, ret));
-}
+    for (size_t repeat = 0; repeat < 5; repeat++) {
+      assert(!isuniform32<bad>(N, ret, false));
+      assert(!isuniform32<badbutbetter>(N, ret, false));
+      bool randok = isuniform32<notgreat>(N, ret, false);
+      if (!randok)
+        printf("rand mod %zu : fails\n", N);
+      total += 12;
+      success += (isuniform32<random_bounded32<lehmer64_32>>(N, ret));
+      success += (isuniform32<java_random_bounded32<lehmer64_32>>(N, ret));
+      success += (isuniform32<go_random_bounded32<lehmer64_32>>(N, ret));
+      success += (isuniform32<random_bounded_nearlydivisionless32<lehmer64_32>>(
+          N, ret));
+      success += (isuniform32<floatmult_random_bounded32<lehmer64_32>>(N, ret));
+      success += (isuniform32<naive_random_bounded32<lehmer64_32>>(N, ret));
+      success += (isuniform64<random_bounded64<lehmer64>>(N, ret));
+      success += (isuniform64<java_random_bounded64<lehmer64>>(N, ret));
+      success += (isuniform64<go_random_bounded64<lehmer64>>(N, ret));
+      success +=
+          (isuniform64<random_bounded_nearlydivisionless64<lehmer64>>(N, ret));
+      success += (isuniform64<floatmult_random_bounded64<lehmer64>>(N, ret));
+      success += (isuniform64<naive_random_bounded64<lehmer64>>(N, ret));
+    }
   }
   if (total - success < 0.05 * total) {
     printf("Results look good, successes = %zu out of %zu. Functions pass "
