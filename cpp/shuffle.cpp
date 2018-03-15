@@ -41,6 +41,18 @@ void array_cache_prefetch(uint32_t *B, int32_t length) {
   }
 }
 
+#if defined(__x86_64) || defined(__i386__)
+void array_cache_flush(uint32_t *B, int32_t length) {
+  const int32_t CACHELINESIZE = 64; // 64 bytes per cache line
+  for (int32_t k = 0; k < length; k += CACHELINESIZE / sizeof(uint32_t)) {
+    __builtin_ia32_clflush(B + k);
+  }
+}
+#else
+void array_cache_flush(uint32_t *B, int32_t length) { (void) B; }
+
+#endif
+
 int sortAndCompare(uint32_t *shuf, uint32_t *orig, uint32_t size) {
   qsort(shuf, size, sizeof(uint32_t), qsort_compare_uint32_t);
   qsort(orig, size, sizeof(uint32_t), qsort_compare_uint32_t);
@@ -53,7 +65,7 @@ int sortAndCompare(uint32_t *shuf, uint32_t *orig, uint32_t size) {
 }
 #define INCLUDEFLOAT
 
-template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
+template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, bool prefetch) {
   if (verbose) {
 
     printf(" %s\n", __PRETTY_FUNCTION__);
@@ -77,30 +89,28 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   UniformRandomBitGenerator32Struct<rfnc32> gen;
 
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #endif
 
   BEST_TIME_NS(shuffle_go32<rfnc32>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 
   BEST_TIME_NS(shuffle_java32<rfnc32>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
-
-#ifdef INCLUDEFLOAT
-  BEST_TIME_NS(shuffle_floatmult32<rfnc32>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-    return;
-#endif
 
   BEST_TIME_NS(shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+
+  BEST_TIME_NS(shuffle_floatmult32<rfnc32>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 
@@ -109,7 +119,7 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   printf("\n");
 }
 
-template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
+template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, bool prefetch) {
   if (verbose) {
     printf(" %s\n", __PRETTY_FUNCTION__);
     printf("Shuffling arrays of size %zu \n", size);
@@ -131,37 +141,45 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose) {
 #ifdef INCLUDESTDSHUFFLE
   UniformRandomBitGenerator64Struct<rfnc64> gen;
   BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #endif
 
   BEST_TIME_NS(shuffle_go64<rfnc64>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 
   BEST_TIME_NS(shuffle_java64<rfnc64>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+  BEST_TIME_NS(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
   BEST_TIME_NS(shuffle_floatmult64<rfnc64>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
-#ifdef INCLUDEFLOAT
-  BEST_TIME_NS(shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
-               array_cache_prefetch(testvalues, size), repeat, size, verbose);
-  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-    return;
-#endif
 
   free(testvalues);
   free(pristinecopy);
   printf("\n");
 }
 
-int main() {
+int main(int argc, char** argv) {
+  bool prefetch = true;
+  if(argc > 1) {
+        if (strcmp(argv[1], "--nocache") == 0) {                 
+            prefetch = false;
+        } else {
+            printf("unknown flag\n");
+            return EXIT_FAILURE;
+        }
+  }
+
   setseed(12345);
 
   printf("# We interleave 32-bit / 64-bit results. \n");
@@ -171,13 +189,15 @@ int main() {
          "per ranged random number.\n");
   printf("# Third column uses an approach with nearly no division per ranged "
          "random number.\n");
+  printf("# Fourth column uses an approach based on floating-point numbers.\n");
+
 
   printf("# Time reported in number of ns per array element in a random "
          "shuffle.\n");
 
   for (size_t N = 10; N <= 1000 * 1000 * 1000; N *= 10) {
-    ShuffleBenchmark32<lehmer64_32>(N, false);
-    ShuffleBenchmark64<lehmer64>(N, false);
+    ShuffleBenchmark32<lehmer64_32>(N, false, prefetch);
+    ShuffleBenchmark64<lehmer64>(N, false, prefetch);
   }
   return 0;
 }
