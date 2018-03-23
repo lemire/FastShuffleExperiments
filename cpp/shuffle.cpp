@@ -75,11 +75,11 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, b
   } else {
     printf("%zu ", size);
   }
-  int repeat = 5;
+  int repeat = 10;
   if (size < 1000000)
     repeat = 50;
   if (size > 10000000)
-    repeat = 1;
+    repeat = 5;
   bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
   uint32_t *precomputed = (uint32_t *) malloc((size + 1) * sizeof(uint32_t));
@@ -135,11 +135,11 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
   } else {
     printf("%zu ", size);
   }
-  int repeat = 5;
+  int repeat = 10;
   if (size < 1000000)
     repeat = 50;
   if (size > 10000000)
-    repeat = 1;
+    repeat = 5;
   bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
@@ -204,12 +204,17 @@ int main(int argc, char** argv) {
   printf("# Third column uses an approach with nearly no division per ranged "
          "random number.\n");
   printf("# Fourth column uses an approach based on floating-point numbers.\n");
+  printf("# Fifth column uses precomputed random indexes.\n");
+
 
 
   printf("# Time reported in number of ns per array element in a random "
          "shuffle.\n");
 
   for (size_t N = 10; N <= 1000 * 1000 * 1000; N *= 10) {
+    ShuffleBenchmark32<lehmer64_32>(N/2, false, prefetch);
+    ShuffleBenchmark64<lehmer64>(N/2, false, prefetch);
+
     ShuffleBenchmark32<lehmer64_32>(N, false, prefetch);
     ShuffleBenchmark64<lehmer64>(N, false, prefetch);
   }

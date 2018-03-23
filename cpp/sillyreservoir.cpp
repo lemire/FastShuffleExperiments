@@ -15,29 +15,25 @@ template <randfnc32 rfnc32> void ReservoirBenchmark32(size_t capacity, size_t si
   if (verbose) {
 
     printf(" %s\n", __PRETTY_FUNCTION__);
-    printf("Shuffling arrays of size %zu \n", size);
     printf("Time reported in number of cycles per array element.\n");
     printf("Tests assume that array is in cache as much as possible.\n");
   } else {
     printf("%zu ", size);
   }
-  int repeat = 5;
+  int repeat = 10;
   if (size < 1000000)
     repeat = 50;
   if (size > 10000000)
-    repeat = 1;
+    repeat = 5;
   uint32_t *reservoir = (uint32_t *) malloc(size * sizeof(uint32_t));
-
-#ifdef INCLUDESTDSHUFFLE
-  UniformRandomBitGenerator32Struct<rfnc32> gen;
-
-  BEST_TIME_NS(std::shuffle(reservoir, reservoir + size, gen),
-               , repeat, size, verbose);
-#endif
 
   BEST_TIME_NS(sillyreservoirsampling_go32<rfnc32>(reservoir, capacity, size),
                , repeat, size, verbose);
+
   BEST_TIME_NS(sillyreservoirsampling_java32<rfnc32>(reservoir, capacity, size),
+               , repeat, size, verbose);
+
+  BEST_TIME_NS(sillyreservoirsampling_nearlydivisionless32<rfnc32>(reservoir, capacity, size),
                , repeat, size, verbose);
 
 #ifdef INCLUDEFLOAT
@@ -45,9 +41,6 @@ template <randfnc32 rfnc32> void ReservoirBenchmark32(size_t capacity, size_t si
                , repeat, size, verbose);
 
 #endif
-
-  BEST_TIME_NS(sillyreservoirsampling_nearlydivisionless32<rfnc32>(reservoir, capacity, size),
-               , repeat, size, verbose);
 
   printf("        %d ", reservoir[0]);
   free(reservoir);
@@ -57,24 +50,17 @@ template <randfnc32 rfnc32> void ReservoirBenchmark32(size_t capacity, size_t si
 template <randfnc64 rfnc64> void ReservoirBenchmark64(size_t capacity, size_t size, bool verbose) {
   if (verbose) {
     printf(" %s\n", __PRETTY_FUNCTION__);
-    printf("Shuffling arrays of size %zu \n", size);
     printf("Time reported in number of ns per array element.\n");
     printf("Tests assume that array is in cache as much as possible.\n");
   } else {
     printf("%zu ", size);
   }
-  int repeat = 5;
+  int repeat = 10;
   if (size < 1000000)
     repeat = 50;
   if (size > 10000000)
-    repeat = 1;
+    repeat = 5;
   uint32_t *reservoir = (uint32_t *) malloc(size * sizeof(uint32_t));
-
-#ifdef INCLUDESTDSHUFFLE
-  UniformRandomBitGenerator64Struct<rfnc64> gen;
-  BEST_TIME_NS(std::shuffle(reservoir, reservoir + size, gen),
-               , repeat, size, verbose);
-#endif
 
   BEST_TIME_NS(sillyreservoirsampling_go64<rfnc64>(reservoir, capacity, size),
                , repeat, size, verbose);
@@ -112,6 +98,9 @@ int main() {
          "shuffle.\n");
   size_t capacity = 10;
   for (size_t N = 10; N <= 1000 * 1000 * 1000; N *= 10) {
+    ReservoirBenchmark32<lehmer64_32>(capacity, N/2, false);
+    ReservoirBenchmark64<lehmer64>(capacity, N/2, false);
+
     ReservoirBenchmark32<lehmer64_32>(capacity, N, false);
     ReservoirBenchmark64<lehmer64>(capacity, N, false);
   }
