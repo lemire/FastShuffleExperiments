@@ -1,4 +1,4 @@
-
+#include "rangedrand.h"
 #include "shuffle.h"
 #include "benchmark.h"
 #include <algorithm>
@@ -82,6 +82,10 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, b
     repeat = 1;
   bool sortandcompare = size < 1000000;
   uint32_t *testvalues = create_random_array(size);
+  uint32_t *precomputed = (uint32_t *) malloc((size + 1) * sizeof(uint32_t));
+  for(size_t i = 1; i <= size; i++) precomputed[i] = java_random_bounded32<rfnc32>(i);
+
+
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
   memcpy(pristinecopy, testvalues, sizeof(uint32_t) * size);
 
@@ -113,7 +117,10 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, b
                prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
-
+  BEST_TIME_NS(shuffle_precomputed(testvalues, size, precomputed),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
   free(testvalues);
   free(pristinecopy);
   printf("\n");
@@ -137,6 +144,9 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
   uint32_t *testvalues = create_random_array(size);
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
   memcpy(pristinecopy, testvalues, sizeof(uint32_t) * size);
+  uint32_t *precomputed = (uint32_t *) malloc((size + 1) * sizeof(uint32_t));
+  for(size_t i = 1; i <= size; i++) precomputed[i] = (uint32_t)java_random_bounded64<rfnc64>(i);
+
 
 #ifdef INCLUDESTDSHUFFLE
   UniformRandomBitGenerator64Struct<rfnc64> gen;
@@ -163,6 +173,10 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
                prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
+  BEST_TIME_NS(shuffle_precomputed(testvalues, size, precomputed),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
 
   free(testvalues);
   free(pristinecopy);
@@ -172,7 +186,7 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
 int main(int argc, char** argv) {
   bool prefetch = true;
   if(argc > 1) {
-        if (strcmp(argv[1], "--nocache") == 0) {                 
+        if (strcmp(argv[1], "--nocache") == 0) {
             prefetch = false;
         } else {
             printf("unknown flag\n");

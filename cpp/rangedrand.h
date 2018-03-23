@@ -1,3 +1,5 @@
+#ifndef RANGEDRAND_H
+#define RANGEDRAND_H
 #include <random>
 #include <stdint.h>
 
@@ -183,3 +185,4 @@ static inline uint64_t random_bounded_nearlydivisionless64(uint64_t range) {
   }
   return multiresult >> 64; // [0, range)
 }
+#endif

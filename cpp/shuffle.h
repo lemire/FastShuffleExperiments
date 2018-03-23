@@ -1,6 +1,17 @@
 #include "rangedrand.h"
 #include <stdint.h>
 
+void shuffle_precomputed(uint32_t *storage, uint32_t size, const uint32_t *precomputedvals) {
+  uint32_t i;
+  for (i = size; i > 1; i--) {
+    uint32_t nextpos = precomputedvals[i];
+    uint32_t tmp = storage[i - 1];   // likely in cache
+    uint32_t val = storage[nextpos]; // could be costly
+    storage[i - 1] = val;
+    storage[nextpos] = tmp; // you might have to read this store later
+  }
+}
+
 // good old Fisher-Yates shuffle, shuffling an array of integers, uses java-like
 // ranged rng
 template <randfnc32 UniformRandomBitGenerator>
