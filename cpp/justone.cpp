@@ -12,11 +12,11 @@
 uint32_t *create_array(size_t count) {
   uint32_t *targets = (uint32_t *)malloc(count * sizeof(uint32_t));
   for (size_t i = 0; i < count; i++)
-    targets[i] = i; 
+    targets[i] = i;
   return targets;
 }
 
-template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
+void ShuffleBenchmark(size_t size, int mode, bool verbose) {
   if (verbose) {
 
     printf(" %s\n", __PRETTY_FUNCTION__);
@@ -26,13 +26,44 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
   } else {
     printf("%zu or %f MB ", size, size * 4.0/(1024.0 * 1024.0));
   }
-  printf("\n creating array...\n");
   uint32_t *testvalues = create_array(size);
-  printf("created array\n");
-  for (int k = 0; k < 10; k ++) {
-    shuffle_go32<rfnc32>(testvalues, size);
-    printf("One shuffle complete\n");
+  switch(mode) {
+    case 1:
+    printf("shuffle_go32\n");
+    shuffle_go32<lehmer64_32>(testvalues, size);
+    break;
+    case 2:
+    printf("shuffle_java32\n");
+    shuffle_java32<lehmer64_32>(testvalues, size);
+    break;
+    case 3:
+    printf("shuffle_nearlydivisionless32\n");
+    shuffle_nearlydivisionless32<lehmer64_32>(testvalues, size);
+    break;
+    case 4:
+    printf("shuffle_floatmult32\n");
+    shuffle_floatmult32<lehmer64_32>(testvalues, size);
+    break;
+    case 5:
+    printf("shuffle_go64\n");
+    shuffle_go64<lehmer64>(testvalues, size);
+    break;
+    case 6:
+    printf("shuffle_java64\n");
+    shuffle_java64<lehmer64>(testvalues, size);
+    break;
+    case 7:
+    printf("shuffle_nearlydivisionless64\n");
+    shuffle_nearlydivisionless64<lehmer64>(testvalues, size);
+    break;
+    case 8:
+    printf("shuffle_floatmult64\n");
+    shuffle_floatmult64<lehmer64>(testvalues, size);
+    break;
+    default:
+    break;
   }
+
   printf("%u \n", testvalues[0]);
   free(testvalues);
 }
@@ -40,11 +71,12 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose) {
 
 
 int main(int argc, char** argv) {
+  int mode = 100;
   if(argc > 1) {
-            printf("unknown flag\n");
-            return EXIT_FAILURE;
+            mode = atoi(argv[1]);
+            //return EXIT_FAILURE;
   }
   setseed(12345);
-  ShuffleBenchmark32<lehmer64_32>(100 * 1000 * 1000, false);
+  ShuffleBenchmark(100 * 1000 * 1000, mode, false);
   return 0;
 }
