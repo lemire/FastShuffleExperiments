@@ -77,6 +77,6 @@ int main(int argc, char** argv) {
             //return EXIT_FAILURE;
   }
   setseed(12345);
-  ShuffleBenchmark(100 * 1000 * 1000, mode, false);
+  ShuffleBenchmark(1000 * 1000 * 1000, mode, false);
   return 0;
 }

@@ -13,7 +13,7 @@
 Sorting stuff
 
 */
-
+#define INCLUDESTDSHUFFLE
 int qsort_compare_uint32_t(const void *a, const void *b) {
   return (*(uint32_t *)a - *(uint32_t *)b);
 }
@@ -89,15 +89,6 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, b
   uint32_t *pristinecopy = (uint32_t *)malloc(size * sizeof(uint32_t));
   memcpy(pristinecopy, testvalues, sizeof(uint32_t) * size);
 
-#ifdef INCLUDESTDSHUFFLE
-  UniformRandomBitGenerator32Struct<rfnc32> gen;
-
-  BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
-               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
-  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-    return;
-#endif
-
   BEST_TIME_NS(shuffle_go32<rfnc32>(testvalues, size),
                prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
@@ -121,6 +112,18 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, b
                prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
+
+#ifdef INCLUDESTDSHUFFLE
+  UniformRandomBitGenerator32Struct<rfnc32> gen;
+
+  BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+#endif
+
+
+
   free(testvalues);
   free(pristinecopy);
   printf("\n");
@@ -148,14 +151,6 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
   for(size_t i = 1; i <= size; i++) precomputed[i] = (uint32_t)java_random_bounded64<rfnc64>(i);
 
 
-#ifdef INCLUDESTDSHUFFLE
-  UniformRandomBitGenerator64Struct<rfnc64> gen;
-  BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
-               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
-  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
-    return;
-#endif
-
   BEST_TIME_NS(shuffle_go64<rfnc64>(testvalues, size),
                prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
@@ -177,6 +172,14 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
                prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
+#ifdef INCLUDESTDSHUFFLE
+  UniformRandomBitGenerator64Struct<rfnc64> gen;
+  BEST_TIME_NS(std::shuffle(testvalues, testvalues + size, gen),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+#endif
+
 
   free(testvalues);
   free(pristinecopy);
