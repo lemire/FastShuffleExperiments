@@ -121,7 +121,26 @@ template <randfnc32 rfnc32> void ShuffleBenchmark32(size_t size, bool verbose, b
   if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
     return;
 #endif
+  printf("     ");
+  BEST_TIME_NS(buf_shuffle_go32<rfnc32>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
 
+  BEST_TIME_NS(buf_shuffle_java32<rfnc32>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+
+  BEST_TIME_NS(buf_shuffle_nearlydivisionless32<rfnc32>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+
+  BEST_TIME_NS(buf_shuffle_floatmult32<rfnc32>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
 
 
   free(testvalues);
@@ -180,6 +199,25 @@ template <randfnc64 rfnc64> void ShuffleBenchmark64(size_t size, bool verbose, b
     return;
 #endif
 
+  printf("     ");
+
+  BEST_TIME_NS(buf_shuffle_go64<rfnc64>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+
+  BEST_TIME_NS(buf_shuffle_java64<rfnc64>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+  BEST_TIME_NS(buf_shuffle_nearlydivisionless64<rfnc64>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
+  BEST_TIME_NS(buf_shuffle_floatmult64<rfnc64>(testvalues, size),
+               prefetch ? array_cache_prefetch(testvalues, size) : array_cache_flush(testvalues, size), repeat, size, verbose);
+  if (sortandcompare && (sortAndCompare(testvalues, pristinecopy, size) != 0))
+    return;
 
   free(testvalues);
   free(pristinecopy);
