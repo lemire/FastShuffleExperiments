@@ -307,7 +307,7 @@ void buf_shuffle_nearlydivisionless64(uint32_t *storage, uint64_t size) {
         storage[nextpos] = tmp;
     }
   }
-  for (i = size; i > 1; i--) {
+  for (; i > 1; i--) {
     uint64_t nextpos =
         random_bounded_nearlydivisionless64<UniformRandomBitGenerator>(i);
     uint64_t tmp = storage[i - 1];   // likely in cache
