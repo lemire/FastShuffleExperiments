@@ -140,7 +140,7 @@ static inline uint64_t go_random_bounded64(uint64_t bound) {
   uint64_t t = (-bound) % bound;
   do {
     bits = RandomBitGenerator();
-  } while (bits <= t);
+  } while (bits < t);
   return bits % bound;
 }
 
