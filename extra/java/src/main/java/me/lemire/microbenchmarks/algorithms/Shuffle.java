@@ -23,8 +23,6 @@ public class Shuffle {
     }
 
     private static int nextPositiveInteger(Random rnd) {
-        //int r = rnd.nextInt();
-        //return r >>> 1;
         return rnd.nextInt() & 0x7fffffff;
     }
 
@@ -53,7 +51,7 @@ public class Shuffle {
 
 
 
-    private static int ranged_random_pcglike(int  range,  Random rnd) {
+    private static int ranged_random_openbsd(int  range,  Random rnd) {
         int threshold = (Integer.MAX_VALUE - range + 1) % range;
         for (;;) {
             int u = nextPositiveInteger(rnd);
@@ -62,11 +60,11 @@ public class Shuffle {
         }
     }
 
-    private static void shuffle_pcglike(int arr[], Random rnd) {
+    private static void shuffle_openbsd(int arr[], Random rnd) {
         int size = arr.length;
         // Shuffle array
         for (int i = size; i > 1; i--)
-            swap(arr, i - 1, ranged_random_pcglike(i,rnd));
+            swap(arr, i - 1, ranged_random_openbsd(i,rnd));
     }
 
     private static int ranged_random_javalike(int  range,  Random rnd) {
@@ -157,14 +155,10 @@ public class Shuffle {
     }
 
     @Benchmark
-    public void test_shuffle_go(BenchmarkState s) {
-        shuffle_pcglike(s.array, r);
+    public void test_shuffle_openbsd(BenchmarkState s) {
+        shuffle_openbsd(s.array, r);
     }
 
-    @Benchmark
-    public void test_shuffle_pcglike(BenchmarkState s) {
-        shuffle_pcglike(s.array, r);
-    }
 
     @Benchmark
     public void test_shuffle_javalike(BenchmarkState s) {
@@ -190,5 +184,3 @@ public class Shuffle {
     }
 
 }
-
-
