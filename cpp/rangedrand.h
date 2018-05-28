@@ -58,7 +58,7 @@ static inline uint64_t naive_random_bounded64(uint64_t bound) {
 }
 
 // return value in [0,bound)
-// as per the PCG implementation , uses two 32-bit divisions
+// as per the PCG implementation, uses two 32-bit divisions
 template <randfnc32 RandomBitGenerator>
 static inline uint32_t random_bounded32(uint32_t bound) {
   uint32_t threshold = (~bound + 1) % bound; // -bound % bound
@@ -93,7 +93,7 @@ static inline uint64_t floatmult_random_bounded64(uint64_t bound) {
 }
 
 // return value in [0,bound)
-// as per the Java implementation , uses one or more 32-bit divisions
+// as per the Java implementation, uses one or more 32-bit divisions
 template <randfnc32 RandomBitGenerator>
 static inline uint32_t java_random_bounded32(uint32_t bound) {
   uint32_t rkey = RandomBitGenerator();
@@ -144,7 +144,7 @@ static inline uint64_t go_random_bounded64(uint64_t bound) {
   return bits % bound;
 }
 
-// map random value to [0,range) with slight bias, redraws to avoid bias if
+// map random value to [0,range), redraws to avoid bias if
 // needed
 template <randfnc32 RandomBitGenerator>
 static inline uint32_t random_bounded_nearlydivisionless32(uint32_t range) {
@@ -165,7 +165,7 @@ static inline uint32_t random_bounded_nearlydivisionless32(uint32_t range) {
   return multiresult >> 32; // [0, range)
 }
 
-// map random value to [0,range) with slight bias, redraws to avoid bias if
+// map random value to [0,range), redraws to avoid bias if
 // needed
 template <randfnc64 RandomBitGenerator>
 static inline uint64_t random_bounded_nearlydivisionless64(uint64_t range) {
