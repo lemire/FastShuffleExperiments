@@ -59,3 +59,7 @@ uint64_t nearlydivisionless(uint64_t s, uint64_t (*random64)(void)) {
 ```
 
 The first one always generates two divisions, the second one usually generates one division whereas the last one rarely requires a division at all.
+
+See:
+
+* Daniel Lemire, [Fast Random Integer Generation in an Interval](https://arxiv.org/abs/1805.10941), ACM Transactions on Modeling and Computer Simulation (to appear)
