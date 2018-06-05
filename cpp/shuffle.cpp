@@ -238,6 +238,8 @@ int main(int argc, char** argv) {
   setseed(12345);
 
   printf("# We interleave 32-bit / 64-bit results. \n");
+  printf("# The array size comes first, then we present columns of timings. \n");
+
   printf("# First column uses an OpenBSD-like approach with two divisions per "
          "ranged random number.\n");
   printf("# Second column uses a Java-like approach with one or more divisions "
@@ -246,8 +248,16 @@ int main(int argc, char** argv) {
          "random number.\n");
   printf("# Fourth column uses an approach based on floating-point numbers.\n");
   printf("# Fifth column uses precomputed random indexes.\n");
-
-
+#ifdef INCLUDESTDSHUFFLE
+  printf("# Next column relates to std::shuffle (the standard library).\n");
+#endif
+  printf("# Next column uses an OpenBSD-like approach with two divisions per "
+         "ranged random number with the numbers written to a buffer.\n");
+  printf("# Next column uses a Java-like approach with one or more divisions "
+         "per ranged random number with the numbers written to a buffer.\n");
+  printf("# Next column uses an approach with nearly no division per ranged "
+         "random number with the numbers written to a buffer.\n");
+  printf("# Next column uses an approach based on floating-point numbers with the numbers written to a buffer.\n");
 
   printf("# Time reported in number of ns per array element in a random "
          "shuffle.\n");
