@@ -3,6 +3,8 @@ How fast can we shuffle values?
 
 We assume that you have a Linux-like system.
 
+To reproduce the figures from the ACM Transactions on Modeling and Computer Simulation article, please go to the TOMACS_RCR subdirectory and consult the README.md file for instructions. 
+
 Usage:
 
 ```
