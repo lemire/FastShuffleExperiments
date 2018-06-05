@@ -25,7 +25,7 @@ template <randfnc32 rfnc32> void ReservoirBenchmark32(size_t capacity, size_t si
     repeat = 50;
   if (size > 10000000)
     repeat = 5;
-  uint32_t *reservoir = (uint32_t *) malloc(size * sizeof(uint32_t));
+  uint32_t *reservoir = (uint32_t *) malloc(capacity * sizeof(uint32_t));
 
   BEST_TIME_NS(sillyreservoirsampling_go32<rfnc32>(reservoir, capacity, size),
                , repeat, size, verbose);
@@ -60,7 +60,7 @@ template <randfnc64 rfnc64> void ReservoirBenchmark64(size_t capacity, size_t si
     repeat = 50;
   if (size > 10000000)
     repeat = 5;
-  uint32_t *reservoir = (uint32_t *) malloc(size * sizeof(uint32_t));
+  uint32_t *reservoir = (uint32_t *) malloc(capacity * sizeof(uint32_t));
 
   BEST_TIME_NS(sillyreservoirsampling_go64<rfnc64>(reservoir, capacity, size),
                , repeat, size, verbose);
