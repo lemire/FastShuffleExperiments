@@ -7,12 +7,28 @@
 - A recent C++ compiler (e.g., GNU G++ or clang++) with the conventional Unix-like toolchain (including make).
 - Gnuplot version 5.2 (to generate the figures).
 
+## Quick version
+
+Type
+
+```
+make plot
+```
+
+This should do everything, including generating the final plots in PDF.
+
+
 ## Generation of the data
 
 The generation of the figures and data should be executed on a Linux machine configured for
 testing. It is  recommended to turn off TurboBoost or the equivalent, to disable
 hyperthreading (since our tests are single threaded) and to set the power policy on
 performance (or the equivalent). It is ill-advised to run benchmarks on a regular laptop.
+
+The benchmark verifies that the average of X runs is equal to the mean of X runs within one percent.
+When that it is not the case, a warning is issued. It is normal to get such warning for tiny arrays (containing
+10 elements), but if you get such warnings for more sizeable arrays, then your results are likely flawed.
+
 
 Type:
 

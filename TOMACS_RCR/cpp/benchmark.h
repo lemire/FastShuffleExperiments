@@ -1,6 +1,6 @@
 #include <chrono>
 #include <stdint.h>
-
+#include <assert.h>
 typedef std::chrono::high_resolution_clock Clock;
 
 #define AVG_TIME_NS(test, pre, repeat, size, verbose)                         \
@@ -34,8 +34,9 @@ typedef std::chrono::high_resolution_clock Clock;
     if (verbose)                                                               \
       printf("\n");                                                            \
     bool err = abs(avg_cycle_per_op - cycle_per_op) > 0.01 * avg_cycle_per_op; \
+    double percent = abs(avg_cycle_per_op - cycle_per_op) / avg_cycle_per_op * 100.0; \
     if(err) {                                                                  \
-      fprintf( stderr, "warning: average %f vs min %f \n", avg_cycle_per_op, cycle_per_op); \
+      fprintf( stderr, "warning: average %f vs min %f (%f percent) for arrays of size %zu \n", avg_cycle_per_op, cycle_per_op, percent, size); \
     }                                                                          \
     if (!verbose)                                                              \
       printf("  %.2f ", avg_cycle_per_op);                                     \
