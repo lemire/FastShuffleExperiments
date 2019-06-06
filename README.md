@@ -64,4 +64,4 @@ The first one always generates two divisions, the second one usually generates o
 
 See:
 
-* Daniel Lemire, [Fast Random Integer Generation in an Interval](https://arxiv.org/abs/1805.10941), ACM Transactions on Modeling and Computer Simulation (to appear)
+* Daniel Lemire, [Fast Random Integer Generation in an Interval](https://arxiv.org/abs/1805.10941), ACM Transactions on Modeling and Computer Simulation Volume 29 Issue 1, February 2019
