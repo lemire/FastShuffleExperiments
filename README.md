@@ -1,9 +1,7 @@
 # FastShuffleExperiments
 How fast can we shuffle values?
 
-The nearly divisionless technique benchmarked in this repository has been widely adopted:
-
-- The algorithm described in my article [Fast Random Integer Generation in an Interval](https://arxiv.org/abs/1805.10941) was adopted to accelerate random number generation
+The [nearly divisionless technique](https://arxiv.org/abs/1805.10941) benchmarked in this repository has been widely adopted:
   * by the [standard C++ Linux library (GNU libstdc++)](https://gcc.gnu.org/git/?p=gcc.git;a=blobdiff;f=libstdc%2B%2B-v3/include/bits/uniform_int_dist.h;h=ecb8574864aee10b9ea164379fffef27c7bdb0df;hp=6e1e3d5fc5fe8f7f22e62a85b35dc8bfa4743372;hb=98c37d3bacbb2f8bbbe56ed53a9547d3be01b66b;hpb=6ce2cb116af6e0965ff0dd69e7fd1925cf5dc68c) to accelerate the std::uniform_int_distribution function,
  * by [Google's Abseil C++ Common Libraries](https://github.com/abseil/abseil-cpp),
  * by [the Swift standard library](https://github.com/apple/swift/pull/25286),
